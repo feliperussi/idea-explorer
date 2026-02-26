@@ -248,10 +248,13 @@ uv run python src/core/runner.py <idea_id> --provider claude --full-permissions
 | `--no-hash` | Simpler repo names (skip random hash) |
 | `--write-paper` | Generate LaTeX paper after experiments |
 | `--paper-style neurips\|icml\|acl` | Paper format (default: neurips) |
+| `--skip-validation` | Skip API key validation before running |
 
 ### Other Commands
 
 ```bash
+./idea-explorer validate    # Validate API keys (format + live HTTP check)
+./idea-explorer validate gemini  # Validate with GOOGLE_API_KEY as required
 ./idea-explorer config      # Configure API keys and settings
 ./idea-explorer shell       # Interactive shell inside the container
 ./idea-explorer login       # Login to CLI tools inside the container
