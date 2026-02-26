@@ -101,7 +101,7 @@ check_gpu() {
             echo "         Ensure --gpus all flag is used when running the container"
         fi
     else
-        echo -e "  ${YELLOW}[WARN]${NC} nvidia-smi not available"
+        echo -e "  ${DIM}[CPU]${NC} No GPU detected (CPU-only mode)"
     fi
     echo ""
 }

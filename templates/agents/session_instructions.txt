@@ -78,32 +78,51 @@ WHY: Using an isolated environment ensures:
 GPU DETECTION AND UTILIZATION
 ────────────────────────────────────────────────────────────────────────────────
 
-At the START of your session, check for GPU availability:
+At the START of your session, detect the best available accelerator:
 
-1. Run GPU detection:
-   nvidia-smi --query-gpu=name,memory.total,memory.free --format=csv 2>/dev/null || echo "NO_GPU"
+1. Run accelerator detection with Python:
+   python3 -c "
+   import torch
+   if torch.cuda.is_available():
+       print(f'CUDA:{torch.cuda.get_device_name(0)}:{torch.cuda.get_device_properties(0).total_mem // (1024**3)}GB')
+   elif torch.backends.mps.is_available():
+       print('MPS:Apple Silicon')
+   else:
+       print('CPU')
+   " 2>/dev/null || echo "CPU"
 
-2. If GPUs are available:
+2. If CUDA GPU is available:
    - Use GPU-accelerated libraries (PyTorch with CUDA, TensorFlow-GPU)
    - Set appropriate batch sizes based on GPU memory:
      * 8GB: batch_size=16-32
      * 16GB: batch_size=32-64
      * 24GB+: batch_size=64-128
    - Enable mixed precision training for faster execution:
-     # PyTorch
      from torch.cuda.amp import autocast, GradScaler
      scaler = GradScaler()
 
-     # TensorFlow
-     tf.keras.mixed_precision.set_global_policy('mixed_float16')
+3. If MPS is available (Apple Silicon Mac):
+   - Use PyTorch with MPS backend: device = torch.device("mps")
+   - MPS supports most PyTorch operations but NOT mixed precision (autocast)
+   - Use moderate batch sizes (similar to 8GB GPU)
+   - Some ops may fall back to CPU automatically — this is expected
+   - TensorFlow also supports Metal via tensorflow-metal plugin
 
-3. If NO GPU available:
+4. If NO accelerator available:
    - Use CPU-optimized settings
    - Reduce model sizes if needed (e.g., use smaller transformer models)
    - Consider using smaller datasets for feasibility
 
-4. Document GPU usage in REPORT.md:
-   - GPU model and memory
+5. Use this helper to select the best device automatically:
+   def get_device():
+       if torch.cuda.is_available():
+           return torch.device("cuda")
+       elif torch.backends.mps.is_available():
+           return torch.device("mps")
+       return torch.device("cpu")
+
+6. Document accelerator usage in REPORT.md:
+   - Accelerator type (CUDA/MPS/CPU), model, and memory
    - Batch sizes used
    - Training time comparisons
 

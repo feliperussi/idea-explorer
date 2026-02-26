@@ -191,10 +191,10 @@ Execute your plan systematically and carefully:
    ✓ Install required dependencies
    ✓ Set random seeds for reproducibility
    ✓ Configure logging
-   ✓ Check GPU availability (run: nvidia-smi --query-gpu=name,memory.total,memory.free --format=csv)
-   ✓ Configure batch sizes based on available GPU memory (8GB→16-32, 16GB→32-64, 24GB+→64-128)
-   ✓ Set up mixed precision training if GPU available (PyTorch: autocast/GradScaler, TF: mixed_float16)
-   ✓ Document environment (Python version, library versions, GPU info)
+   ✓ Check accelerator availability (CUDA via nvidia-smi, or MPS via torch.backends.mps.is_available())
+   ✓ Configure batch sizes based on accelerator (CUDA 8GB→16-32, 16GB→32-64, 24GB+→64-128; MPS→16-32)
+   ✓ Set up mixed precision if CUDA available (autocast/GradScaler) — skip on MPS
+   ✓ Document environment (Python version, library versions, accelerator info)
 
 2. Data Preparation
    ✓ Load and validate datasets

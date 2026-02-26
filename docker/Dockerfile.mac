@@ -1,0 +1,168 @@
+# syntax=docker/dockerfile:1.5
+# idea-explorer Docker Image for Mac Silicon (ARM, no CUDA)
+#
+# Usage:
+#   docker build -t idea-explorer:mac -f docker/Dockerfile.mac .
+#   Then use ./idea-explorer commands as normal
+
+# =============================================================================
+# Stage 1: Builder
+# =============================================================================
+FROM ubuntu:22.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    wget \
+    git \
+    ca-certificates \
+    gnupg \
+    libssl-dev \
+    libffi-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libncurses5-dev \
+    libncursesw5-dev \
+    xz-utils \
+    tk-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    liblzma-dev \
+    zlib1g-dev \
+    git-lfs \
+    openssh-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 22 (required for Claude Code, Codex, Gemini CLIs)
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g npm@latest \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:0.5.11 /uv /usr/local/bin/uv
+
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+ENV UV_PYTHON_INSTALL_DIR=/python
+ENV UV_PYTHON_PREFERENCE=only-managed
+
+RUN uv python install 3.12
+
+# Install AI CLI tools globally via npm
+RUN npm install -g @anthropic-ai/claude-code \
+    && npm install -g @openai/codex \
+    && npm install -g @google/gemini-cli
+
+WORKDIR /app
+COPY . .
+
+# Build idea-explorer virtual environment
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv venv /app/.venv \
+    && uv sync --frozen --no-dev
+
+# Build paper-finder virtual environment
+WORKDIR /app/services/paper-finder
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --all-packages --dev
+WORKDIR /app
+
+# =============================================================================
+# Stage 2: Runtime (no CUDA)
+# =============================================================================
+FROM ubuntu:22.04 AS runtime
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    git \
+    git-lfs \
+    openssh-client \
+    ca-certificates \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install LaTeX for paper compilation
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    texlive-latex-base \
+    texlive-latex-extra \
+    texlive-latex-recommended \
+    texlive-fonts-recommended \
+    texlive-fonts-extra \
+    texlive-science \
+    texlive-bibtex-extra \
+    texlive-publishers \
+    lmodern \
+    cm-super \
+    biber \
+    latexmk \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Node.js from builder
+COPY --from=builder /usr/bin/node /usr/bin/
+COPY --from=builder /usr/lib/node_modules /usr/lib/node_modules
+RUN ln -sf /usr/lib/node_modules/npm/bin/npm-cli.js /usr/bin/npm \
+    && ln -sf /usr/lib/node_modules/npm/bin/npx-cli.js /usr/bin/npx
+
+# Symlink CLI tools
+RUN ln -sf /usr/lib/node_modules/@anthropic-ai/claude-code/cli.js /usr/bin/claude \
+    && ln -sf /usr/lib/node_modules/@openai/codex/bin/codex.js /usr/bin/codex \
+    && ln -sf /usr/lib/node_modules/@google/gemini-cli/dist/index.js /usr/bin/gemini
+
+COPY --from=ghcr.io/astral-sh/uv:0.5.11 /uv /usr/local/bin/uv
+
+# Copy Python from builder
+COPY --from=builder /python /python
+
+# Copy /app with all venvs
+COPY --from=builder /app /app
+
+# Set up paths
+ENV PATH="/app/.venv/bin:/python/bin:/usr/local/bin:${PATH}"
+ENV UV_PYTHON_INSTALL_DIR=/python
+ENV UV_PYTHON_PREFERENCE=only-managed
+ENV VIRTUAL_ENV="/app/.venv"
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV UV_COMPILE_BYTECODE=1
+ENV PYTHONPATH="/app:${PYTHONPATH}"
+
+# Create non-root user
+ARG UID=1000
+ARG GID=1000
+RUN groupadd -g ${GID} researcher \
+    && useradd -u ${UID} -g researcher -m -s /bin/bash researcher
+
+RUN mkdir -p /workspaces && chown researcher:researcher /workspaces
+
+RUN mkdir -p /app/ideas/submitted /app/ideas/in_progress /app/ideas/completed \
+    /app/logs /app/runs \
+    && chown -R researcher:researcher /app \
+    && chmod -R a+rX /app \
+    && chmod -R 777 /app/services/paper-finder
+
+USER researcher
+WORKDIR /app
+
+RUN git config --global user.email "researcher@idea-explorer" \
+    && git config --global user.name "Idea Explorer" \
+    && git config --global init.defaultBranch main
+
+RUN mkdir -p ~/.claude ~/.codex ~/.gemini ~/.cache/uv
+
+ENV IDEA_EXPLORER_WORKSPACE=/workspaces
+
+VOLUME ["/workspaces"]
+WORKDIR /workspaces
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import sys; sys.exit(0)"
+
+ENTRYPOINT ["/app/docker/entrypoint.sh"]
+CMD ["bash"]

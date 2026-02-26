@@ -540,7 +540,7 @@ env_info = {
     'sklearn_version': sklearn.__version__,
     'torch_version': torch.__version__,
     'cuda_version': torch.version.cuda if torch.cuda.is_available() else None,
-    'device': 'cuda' if torch.cuda.is_available() else 'cpu'
+    'device': 'cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu')
 }
 
 print("Environment:")

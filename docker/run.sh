@@ -9,7 +9,16 @@ set -e
 # Get script and project directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-IMAGE_NAME="chicagohai/idea-explorer:latest"
+
+# Auto-detect platform and select appropriate image
+# macOS/ARM uses a lighter image without CUDA dependencies
+if [[ "$OSTYPE" == "darwin"* ]] || [[ "$(uname -m)" == "arm64" && ! -f "/.dockerenv" ]]; then
+    IMAGE_NAME="${IDEA_EXPLORER_IMAGE:-idea-explorer:mac}"
+    PLATFORM="mac"
+else
+    IMAGE_NAME="${IDEA_EXPLORER_IMAGE:-chicagohai/idea-explorer:latest}"
+    PLATFORM="linux"
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -21,6 +30,18 @@ MAGENTA='\033[0;35m'
 BOLD='\033[1m'
 DIM='\033[2m'
 NC='\033[0m'
+
+# -----------------------------------------------------------------------------
+# Portable sed in-place edit (macOS BSD vs Linux GNU)
+# Usage: sed_inplace "s|foo|bar|" file
+# -----------------------------------------------------------------------------
+sed_inplace() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "$@"
+    else
+        sed -i "$@"
+    fi
+}
 
 # -----------------------------------------------------------------------------
 # ASCII Art Banner
@@ -44,6 +65,9 @@ show_banner() {
 show_status() {
     echo -e "  ${BOLD}Status:${NC}"
 
+    # Platform
+    echo -e "    Platform ........... ${CYAN}[$PLATFORM]${NC}"
+
     # Docker
     if command -v docker &> /dev/null; then
         echo -e "    Docker .............. ${GREEN}[OK]${NC}"
@@ -58,11 +82,15 @@ show_status() {
         echo -e "    Docker image ........ ${YELLOW}[MISSING]${NC} run: ./idea-explorer setup"
     fi
 
-    # GPU
-    if docker info 2>/dev/null | grep -qi nvidia; then
-        echo -e "    GPU ................. ${GREEN}[OK]${NC} nvidia-container-toolkit"
+    # GPU (only relevant on Linux)
+    if [ "$PLATFORM" = "linux" ]; then
+        if docker info 2>/dev/null | grep -qi nvidia; then
+            echo -e "    GPU ................. ${GREEN}[OK]${NC} nvidia-container-toolkit"
+        else
+            echo -e "    GPU ................. ${YELLOW}[WARN]${NC} nvidia-container-toolkit not found"
+        fi
     else
-        echo -e "    GPU ................. ${YELLOW}[WARN]${NC} nvidia-container-toolkit not found"
+        echo -e "    GPU ................. ${DIM}[N/A]${NC} not applicable on macOS"
     fi
 
     # .env
@@ -126,6 +154,11 @@ get_tty_flag() {
 # Get GPU flags (auto-detects availability)
 # -----------------------------------------------------------------------------
 get_gpu_flags() {
+    if [ "$PLATFORM" = "mac" ]; then
+        # macOS Docker does not support GPU passthrough
+        echo ""
+        return
+    fi
     if docker info 2>/dev/null | grep -qi nvidia; then
         echo "--gpus all"
     else
@@ -185,10 +218,16 @@ get_workspace_dir() {
     local parent_dir=""
 
     # Try user config first, then template
+    # Uses grep|cut|tr instead of sed regex for macOS/Linux portability
+    local yaml_file=""
     if [ -f "$config_file" ]; then
-        parent_dir=$(grep -E '^\s*parent_dir:' "$config_file" | sed 's/.*parent_dir:\s*["'\'']\?\([^"'\'']*\)["'\'']\?.*/\1/' | tr -d ' ')
+        yaml_file="$config_file"
     elif [ -f "$template_file" ]; then
-        parent_dir=$(grep -E '^\s*parent_dir:' "$template_file" | sed 's/.*parent_dir:\s*["'\'']\?\([^"'\'']*\)["'\'']\?.*/\1/' | tr -d ' ')
+        yaml_file="$template_file"
+    fi
+
+    if [ -n "$yaml_file" ]; then
+        parent_dir=$(grep 'parent_dir' "$yaml_file" | head -1 | cut -d':' -f2 | tr -d " \"'")
     fi
 
     # Default to ./workspaces if not found or empty
@@ -236,10 +275,15 @@ check_env_file() {
 # Build the container image
 # -----------------------------------------------------------------------------
 cmd_build() {
-    echo -e "${BLUE}Building idea-explorer container image...${NC}"
     cd "$PROJECT_ROOT"
-    docker build -t "$IMAGE_NAME" -f docker/Dockerfile .
-    echo -e "${GREEN}Build complete!${NC}"
+    if [ "$PLATFORM" = "mac" ]; then
+        echo -e "${BLUE}Building idea-explorer image for macOS/ARM (no CUDA)...${NC}"
+        docker build -t "$IMAGE_NAME" -f docker/Dockerfile.mac .
+    else
+        echo -e "${BLUE}Building idea-explorer image for Linux (with CUDA)...${NC}"
+        docker build -t "$IMAGE_NAME" -f docker/Dockerfile .
+    fi
+    echo -e "${GREEN}Build complete: $IMAGE_NAME${NC}"
 }
 
 # -----------------------------------------------------------------------------
@@ -515,12 +559,25 @@ check_image() {
         return
     fi
 
-    echo -e "    Pulling ghcr.io/chicagohai/idea-explorer:latest..."
-    if docker pull ghcr.io/chicagohai/idea-explorer:latest; then
-        docker tag ghcr.io/chicagohai/idea-explorer:latest "$IMAGE_NAME"
-        echo -e "    ${GREEN}[OK]${NC} Image ready (tagged as $IMAGE_NAME)"
+    if [ "$PLATFORM" = "mac" ]; then
+        echo -e "    ${YELLOW}[MISSING]${NC} No local image found: $IMAGE_NAME"
+        echo -e "    macOS/ARM requires a local build (no pre-built image available)."
+        echo -e "    Run: ${BOLD}./idea-explorer build${NC}"
+        echo ""
+        read -p "    Build now? [Y/n] " build_choice
+        if [[ "$build_choice" =~ ^[Nn] ]]; then
+            echo -e "    ${YELLOW}[SKIP]${NC} Skipping build — run ./idea-explorer build later"
+        else
+            cmd_build
+        fi
     else
-        echo -e "    ${YELLOW}[WARN]${NC} Pull failed — you can build locally with: ./idea-explorer build"
+        echo -e "    Pulling ghcr.io/chicagohai/idea-explorer:latest..."
+        if docker pull ghcr.io/chicagohai/idea-explorer:latest; then
+            docker tag ghcr.io/chicagohai/idea-explorer:latest "$IMAGE_NAME"
+            echo -e "    ${GREEN}[OK]${NC} Image ready (tagged as $IMAGE_NAME)"
+        else
+            echo -e "    ${YELLOW}[WARN]${NC} Pull failed — you can build locally with: ./idea-explorer build"
+        fi
     fi
     echo ""
 }
@@ -571,9 +628,9 @@ config_set_env() {
     local var_name="$1"
     local value="$2"
     if grep -q "^${var_name}=" "$PROJECT_ROOT/.env" 2>/dev/null; then
-        sed -i "s|^${var_name}=.*|${var_name}=${value}|" "$PROJECT_ROOT/.env"
+        sed_inplace "s|^${var_name}=.*|${var_name}=${value}|" "$PROJECT_ROOT/.env"
     elif grep -q "^# *${var_name}=" "$PROJECT_ROOT/.env" 2>/dev/null; then
-        sed -i "s|^# *${var_name}=.*|${var_name}=${value}|" "$PROJECT_ROOT/.env"
+        sed_inplace "s|^# *${var_name}=.*|${var_name}=${value}|" "$PROJECT_ROOT/.env"
     else
         echo "${var_name}=${value}" >> "$PROJECT_ROOT/.env"
     fi
@@ -624,9 +681,9 @@ prompt_secret() {
 
     # Write to .env
     if grep -q "^${env_var}=" "$PROJECT_ROOT/.env" 2>/dev/null; then
-        sed -i "s|^${env_var}=.*|${env_var}=${value}|" "$PROJECT_ROOT/.env"
+        sed_inplace "s|^${env_var}=.*|${env_var}=${value}|" "$PROJECT_ROOT/.env"
     elif grep -q "^# *${env_var}=" "$PROJECT_ROOT/.env" 2>/dev/null; then
-        sed -i "s|^# *${env_var}=.*|${env_var}=${value}|" "$PROJECT_ROOT/.env"
+        sed_inplace "s|^# *${env_var}=.*|${env_var}=${value}|" "$PROJECT_ROOT/.env"
     else
         echo "${env_var}=${value}" >> "$PROJECT_ROOT/.env"
     fi
@@ -907,9 +964,9 @@ setup_env_interactive() {
         "Repos will be created under this org. Leave empty to use your personal account."
     if [ -n "$REPLY" ]; then
         if grep -q "^GITHUB_ORG=" "$PROJECT_ROOT/.env" 2>/dev/null; then
-            sed -i "s|^GITHUB_ORG=.*|GITHUB_ORG=$REPLY|" "$PROJECT_ROOT/.env"
+            sed_inplace "s|^GITHUB_ORG=.*|GITHUB_ORG=$REPLY|" "$PROJECT_ROOT/.env"
         elif grep -q "^# *GITHUB_ORG=" "$PROJECT_ROOT/.env" 2>/dev/null; then
-            sed -i "s|^# *GITHUB_ORG=.*|GITHUB_ORG=$REPLY|" "$PROJECT_ROOT/.env"
+            sed_inplace "s|^# *GITHUB_ORG=.*|GITHUB_ORG=$REPLY|" "$PROJECT_ROOT/.env"
         else
             echo "GITHUB_ORG=$REPLY" >> "$PROJECT_ROOT/.env"
         fi
@@ -929,7 +986,7 @@ setup_env_interactive() {
         if [ ! -f "$ws_config" ] && [ -f "$PROJECT_ROOT/config/workspace.yaml.example" ]; then
             cp "$PROJECT_ROOT/config/workspace.yaml.example" "$ws_config"
         fi
-        sed -i "s|parent_dir:.*|parent_dir: \"$REPLY\"|" "$ws_config"
+        sed_inplace "s|parent_dir:.*|parent_dir: \"$REPLY\"|" "$ws_config"
         echo -e "    ${GREEN}[OK]${NC} Workspace directory set to $REPLY"
     else
         echo -e "    ${DIM}[OK]${NC} Using default: ./workspaces"
@@ -1066,7 +1123,7 @@ cmd_config() {
                     if [ ! -f "$ws_config" ] && [ -f "$PROJECT_ROOT/config/workspace.yaml.example" ]; then
                         cp "$PROJECT_ROOT/config/workspace.yaml.example" "$ws_config"
                     fi
-                    sed -i "s|parent_dir:.*|parent_dir: \"$REPLY\"|" "$ws_config"
+                    sed_inplace "s|parent_dir:.*|parent_dir: \"$REPLY\"|" "$ws_config"
                     echo -e "    ${GREEN}[OK]${NC} Workspace directory set to $REPLY"
                 else
                     echo -e "    ${DIM}[SKIP]${NC} No change"
@@ -1110,6 +1167,7 @@ cmd_help() {
     echo "  up                        Start container in background (compose)"
     echo "  down                      Stop background container (compose)"
     echo "  logs                      View container logs (compose)"
+    echo "  status                    Show platform and configuration status"
     echo "  help                      Show this help message"
     echo ""
     echo "First-time setup:"
@@ -1131,7 +1189,7 @@ ACTION="${1:-help}"
 shift 2>/dev/null || true
 
 # Check Docker is available (skip for commands that don't need it)
-if [ "$ACTION" != "config" ] && [ "$ACTION" != "help" ] && [ "$ACTION" != "--help" ] && [ "$ACTION" != "-h" ]; then
+if [ "$ACTION" != "config" ] && [ "$ACTION" != "help" ] && [ "$ACTION" != "--help" ] && [ "$ACTION" != "-h" ] && [ "$ACTION" != "status" ]; then
     check_docker
 fi
 
@@ -1168,6 +1226,10 @@ case "$ACTION" in
         ;;
     logs)
         cmd_logs
+        ;;
+    status)
+        show_banner
+        show_status
         ;;
     help|--help|-h)
         cmd_help

@@ -8,6 +8,8 @@ paper_examples/*
 
 # Environment variables
 .env
+.env.*
+.env-*
 .env.local
 
 # Local config overrides (use .example templates)
@@ -61,6 +63,7 @@ workspace/
 workspaces/
 notebooks/
 logs/
+notebook/
 
 # Temporary files and logs (may contain sensitive data)
 *.log
