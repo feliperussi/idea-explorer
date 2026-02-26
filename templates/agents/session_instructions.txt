@@ -138,6 +138,11 @@ resources for you. Your workspace contains:
 - papers/: Downloaded research papers (PDFs)
 - datasets/: Downloaded datasets ready to use (locally available, not in git)
 - code/: Cloned repositories with baseline implementations
+- .knowledge/: Obsidian-compatible reasoning trace from the resource finder
+  (README.md narrative, paper notes, decisions)
+
+READ .knowledge/README.md for the full story of what was found and how
+findings connect to each other.
 
 NOTE: The datasets/ directory contains a .gitignore that excludes large data files
 from git commits. The data is available locally for your experiments, and
@@ -208,6 +213,144 @@ If you find yourself about to create "simulated LLM agents," STOP and use real A
 
 ════════════════════════════════════════════════════════════════════════════════
 
+KNOWLEDGE TRACE (Obsidian Notes)
+────────────────────────────────────────────────────────────────────────────────
+The resource finder has already created .knowledge/ with paper notes, decisions,
+and a README.md that tells the story so far. You will CONTINUE this narrative
+by adding your experiments, new decisions, and findings.
+
+A human should be able to read .knowledge/README.md and understand the FULL
+research story — from question to literature to experiments to conclusion —
+like reading a blog post, not a spreadsheet.
+
+Key rules:
+- YAML frontmatter on every .md file (between --- delimiters)
+- Use [[wikilinks]] for cross-references (e.g., [[papers/2401.12345]])
+- Use callouts for important notes (> [!warning], > [!tip])
+- Write PROSE, not tables or lists. Tell the story.
+
+The .knowledge/ directory should already contain:
+  .knowledge/README.md     ← THE STORY (you will continue writing this)
+  .knowledge/papers/       ← paper notes from the resource finder
+  .knowledge/decisions/    ← resource-finder decisions
+
+You will ADD to these:
+  .knowledge/experiments/  ← CREATE this directory (mkdir -p .knowledge/experiments)
+  .knowledge/decisions/    ← ADD new decisions from your experiments
+  .knowledge/errors.md     ← CREATE/APPEND errors encountered
+  .knowledge/README.md     ← APPEND your experiment narrative to the story
+
+───── NOTE TEMPLATES ─────
+
+EXPERIMENT NOTE — .knowledge/experiments/{n}-{slug}.md
+(one per experiment or method you run)
+
+  ---
+  title: "Experiment: {name}"
+  tags: [experiment, {method-tag}]
+  phase: experiment-runner
+  sequence: {n}
+  status: completed | failed | partial
+  depends-on: ["[[experiments/{previous}]]"]
+  based-on: ["[[papers/{id}]]"]
+  ---
+
+  # {Experiment Name}
+
+  ## Why This Experiment
+  {What question does this answer in the research story? What motivated
+  it — a paper finding, a gap, a previous experiment's result?}
+
+  ## Setup
+  - **Model**: {model used}
+  - **Dataset**: {dataset name and size}
+  - **Method**: {brief description}
+
+  ## Results
+  {Key metrics — accuracy, F1, latency, etc.}
+
+  ## What This Means
+  {How does this result advance or change the hypothesis? What does it
+  tell us that we didn't know before? 2-3 sentences of interpretation.}
+
+  ## Issues
+  {Any problems encountered, fallbacks taken, unexpected behavior}
+
+  ## Connections
+  - Based on → [[papers/{id}]]
+  - Compared with → [[experiments/{other}]]
+  - Decision → [[decisions/{id}]]
+
+DECISION NOTE — .knowledge/decisions/{n}-{slug}.md
+(one per significant choice: methodology pivot, baseline selection, etc.)
+
+  ---
+  title: "Decision: {what was decided}"
+  tags: [decision, {topic-tag}]
+  phase: experiment-runner
+  ---
+
+  # {What was decided}
+
+  ## Context
+  {Why this decision was needed — 1-2 sentences}
+
+  ## Options Considered
+  1. **{Option A}**: {pros/cons}
+  2. **{Option B}**: {pros/cons}
+
+  ## Choice
+  {What was chosen and why}
+
+ERROR LOG — .knowledge/errors.md
+(single file, append entries as errors occur)
+
+  ## {YYYY-MM-DD HH:MM} — {Brief description}
+  - **Phase**: experiment-runner
+  - **What happened**: {error message or behavior}
+  - **Impact**: {what was affected}
+  - **Resolution**: {how it was handled — retry, skip, fallback}
+
+CONTINUE THE STORY — .knowledge/README.md
+(APPEND these sections to the existing README.md at the END of Phase 6)
+
+Read the existing .knowledge/README.md first. It ends with a "What's Next"
+section written by the resource finder. You will APPEND new sections that
+continue the narrative. Write as PROSE, not tables.
+
+  ## The Experiments
+
+  {Tell the story of what you tested and why, in sequence. Each experiment
+  gets 1-2 paragraphs in the narrative, with a [[wikilink]] to the detailed
+  note. Example:}
+
+  First, we tested whether LLMs can detect supersession at all
+  ([[experiments/01-supersession-detection|Experiment 1]]). The result was
+  striking: all automated methods achieved perfect F1=1.000 on our 60-pair
+  dataset, while the simulated human expert missed every partial amendment...
+
+  This confirmed detection works, but can we propagate invalidations through
+  a dependency graph? [[experiments/02-graph-propagation|Experiment 2]] tested
+  BFS cascade against direct-only detection. The cascade found 2.5× more
+  affected KB entries...
+
+  ## Key Findings
+
+  {3-5 paragraphs SYNTHESIZING all experiments into a coherent answer to the
+  research question. Not individual results — the overall picture. What
+  patterns emerged? What surprised you? What's the takeaway?}
+
+  ## What Didn't Work
+
+  {Honest account of errors, fallbacks, and limitations. Link to [[errors]]
+  and relevant experiment notes. What would you do differently?}
+
+  ## Conclusion
+
+  {2-3 sentences: was the hypothesis validated? What's the bottom line?}
+
+════════════════════════════════════════════════════════════════════════════════
+
 Execute the following research task:
 
 {{ prompt }}
@@ -218,9 +361,10 @@ EXECUTION WORKFLOW (FOLLOW THIS SEQUENCE - DO NOT STOP BETWEEN PHASES):
 ────────────────────────────────────────────────────────────────────────────────
 
 BEFORE YOU START: Review Pre-Gathered Resources (5-10 min)
+  ✓ READ .knowledge/README.md for the research story so far
   ✓ READ literature_review.md to understand the research landscape
   ✓ READ resources.md to see what's available
-  ✓ Browse papers/ directory for key papers
+  ✓ Browse .knowledge/papers/ for per-paper reasoning notes
   ✓ Check datasets/ directory to see what data is ready
   ✓ Explore code/ directory for baseline implementations
 
@@ -237,6 +381,8 @@ Phase 1: Motivation & Planning (20-40 min)
   ✓ Choose baselines and metrics based on literature review
   ✓ Plan timeline and resource allocation
   ✓ Document plan in planning.md (2-3 pages maximum)
+  ✓ Write .knowledge/decisions/{n}-{slug}.md for key planning decisions
+    (e.g., dataset choice, baseline selection, methodology pivot)
 
   → WHEN COMPLETE: Immediately proceed to Phase 2 (Setup)
   → DO NOT WAIT for user confirmation - this is fully automated!
@@ -267,6 +413,9 @@ Phase 4: Experimentation (60-90 min)
   ✓ Collect results systematically (save to results/ directory)
   ✓ Generate visualizations
   ✓ Monitor for issues
+  ✓ After EACH experiment → write .knowledge/experiments/{n}-{slug}.md
+    (setup, results, interpretation — see template above)
+  ✓ On errors or fallbacks → append to .knowledge/errors.md
 
   → WHEN COMPLETE: Immediately proceed to Phase 5 (Analysis)
 
@@ -285,6 +434,7 @@ Phase 6: Final Documentation (20-30 min) - MANDATORY BEFORE ENDING SESSION
   ✓ Ensure resources.md documents your research process
   ✓ Verify all code has clear comments and docstrings
   ✓ Check reproducibility
+  ✓ APPEND experiment narrative to .knowledge/README.md (continue the story)
 
   → WHEN COMPLETE: Session is finished
 
@@ -383,5 +533,7 @@ The session is COMPLETE when:
 ✓ README.md has been created with overview
 ✓ Code is organized with comments
 ✓ Results are saved to results/ directory
+✓ .knowledge/experiments/ has notes for each experiment run
+✓ .knowledge/README.md tells the complete story (literature + experiments + findings)
 
 If you reach this point, your research session is finished.

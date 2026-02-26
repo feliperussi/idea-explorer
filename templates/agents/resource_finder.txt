@@ -149,10 +149,15 @@ Skipping chunks means missing important methodology and results.
 STEP 3: WRITE NOTES IMMEDIATELY
 ─────────────────────────────────────────────────────────────────────────────
 
-After reading each chunk PDF:
+After reading each paper (or its chunks):
 - Write findings to literature_review.md immediately
 - Include: methodology, datasets, baselines, key results, code links
 - Good notes mean you (or experiment runner) rarely need to re-read
+
+ALSO: Write a knowledge trace note for the paper (see KNOWLEDGE TRACE below)
+- Create .knowledge/papers/{arxiv-id}.md using the PAPER NOTE template
+- Include: summary, key findings, relevance, and [[wikilinks]] to related papers
+- This takes 1-2 minutes and makes the research navigable for humans
 
 STEP 4: USE APIs FOR ABSTRACTS WHEN AVAILABLE
 ─────────────────────────────────────────────────────────────────────────────
@@ -160,6 +165,162 @@ STEP 4: USE APIs FOR ABSTRACTS WHEN AVAILABLE
 - Paper-finder already provides abstracts in its output
 - ArXiv API and Semantic Scholar also provide abstracts
 - Use these for initial screening before deciding which papers need deep reading
+
+═══════════════════════════════════════════════════════════════════════════════
+                    KNOWLEDGE TRACE (Obsidian Notes)
+═══════════════════════════════════════════════════════════════════════════════
+
+IMPORTANT: Throughout your work, write Obsidian-compatible notes that trace
+your reasoning. A human should be able to open .knowledge/ in Obsidian and
+understand the FULL STORY of what you did, why, and what you found — like
+reading a blog post, not a spreadsheet.
+
+AT THE START: Create the knowledge trace directory:
+  mkdir -p .knowledge/papers .knowledge/decisions
+
+AS YOU WORK:
+- After reading each paper → write .knowledge/papers/{arxiv-id}.md
+- When making significant decisions → write .knowledge/decisions/{n}-{slug}.md
+- When encountering errors → append to .knowledge/errors.md
+
+AT THE END: Write .knowledge/README.md — THE MAIN NARRATIVE.
+This is the most important file. It tells the research story as prose,
+with [[wikilinks]] to detailed notes. A reader should understand everything
+by reading ONLY this file.
+
+───── NOTE TEMPLATES ─────
+
+PAPER NOTE — .knowledge/papers/{arxiv-id}.md
+(one per paper read, filename = arxiv ID or author-year-keyword)
+
+  ---
+  title: "{Paper Title}"
+  tags: [paper, {domain-tag}]
+  phase: resource-finder
+  arxiv: "{arxiv-id}"
+  authors: "{First Author} et al."
+  year: {YYYY}
+  read-order: {n}
+  relevance: high | medium | low
+  decision: use | discard | reference-only
+  ---
+
+  # {Paper Title}
+
+  ## Role in the Story
+  {ONE sentence: what this paper contributes to the research narrative.
+  Examples: "Identified the core problem", "Proposed the closest prior
+  solution", "Showed this approach fails in the legal domain"}
+
+  ## Summary
+  {2-3 sentences: what the paper does and main contribution}
+
+  ## Key Findings
+  - {Finding 1}
+  - {Finding 2}
+
+  ## Relevance to Our Research
+  {Why this paper matters or doesn't for our hypothesis}
+
+  ## Connections
+  - {relation} → [[papers/{other-id}]]
+  - Informed → [[decisions/{slug}]]
+
+DECISION NOTE — .knowledge/decisions/{n}-{slug}.md
+(one per significant choice: dataset selection, method change, etc.)
+
+  ---
+  title: "Decision: {what was decided}"
+  tags: [decision, {topic-tag}]
+  phase: resource-finder
+  ---
+
+  # {What was decided}
+
+  ## Context
+  {Why this decision was needed — 1-2 sentences}
+
+  ## Options Considered
+  1. **{Option A}**: {pros/cons}
+  2. **{Option B}**: {pros/cons}
+
+  ## Choice
+  {What was chosen and why}
+
+ERROR LOG — .knowledge/errors.md
+(single file, append entries as errors occur)
+
+  ---
+  title: "Error Log"
+  tags: [errors, log]
+  ---
+
+  # Error Log
+
+  ## {YYYY-MM-DD HH:MM} — {Brief description}
+  - **Phase**: resource-finder
+  - **What happened**: {error message or behavior}
+  - **Resolution**: {how it was handled — retry, skip, fallback}
+
+THE STORY — .knowledge/README.md
+(write at the END of your phase — this is the MAIN DELIVERABLE of the trace)
+
+Write this as a NARRATIVE — continuous prose that tells the story of what
+you found, not a list of links. A reader with zero context should understand
+the research landscape by reading only this file. Use [[wikilinks]] so they
+can click into details if they want more depth.
+
+  ---
+  title: "Research Trace: {topic}"
+  tags: [trace, narrative]
+  ---
+
+  # {Research Topic — as a question}
+
+  ## The Question
+  {1-2 paragraphs: what we're investigating and why it matters.
+  Write for a smart person who knows nothing about this topic.}
+
+  ## What We Found in the Literature
+
+  {Tell the story of the papers. DON'T list them — narrate them.
+  Group by themes or threads, not by paper order. For each important
+  paper, write 2-3 sentences IN the story with a [[wikilink]] to the
+  detailed note. Example:}
+
+  The most comprehensive overview is [[papers/2403.08319|Xu et al.'s
+  survey on knowledge conflicts]], which identifies temporal
+  misalignment as the primary driver of context-memory conflicts in
+  LLMs. But no existing work handles **document supersession** — where
+  a new document explicitly invalidates an older one.
+
+  The closest prior work is [[papers/2510.08109|VersionRAG]], which
+  tags documents with version metadata. However, it targets software
+  docs with clean version numbers, not regulatory text where
+  supersession is implicit in legal language...
+
+  {For discarded papers, use a collapsed callout:}
+
+  > [!note]- Papers we reviewed but didn't use
+  > - [[papers/2509.13203]] — constraint scheduling, not NLP
+  > - ...
+
+  ## What We Decided
+
+  {Explain each decision as part of the story:}
+
+  Based on these gaps, we chose [[decisions/01-dataset-selection|evolveQA
+  and EUR-Lex as primary datasets]] because evolveQA provides ready-made
+  temporal QA pairs while EUR-Lex gives real regulatory language...
+
+  ## What's Next
+
+  {What should the experiment runner test, and why — 1 paragraph.
+  This is the handoff to the next phase.}
+
+  ## Errors & Issues
+
+  {1-2 sentences summary. Link to [[errors]] for the full log.}
 
 ═══════════════════════════════════════════════════════════════════════════════
                      RESOURCE FINDER METHODOLOGY
@@ -171,6 +332,7 @@ Given a research hypothesis or topic, you will:
 2. Find and download suitable datasets for experimentation
 3. Locate and clone relevant code repositories (baselines, implementations)
 4. Summarize findings in organized documentation
+5. Trace your reasoning in .knowledge/ notes (see KNOWLEDGE TRACE above)
 
 OUTPUT DELIVERABLES (all saved in current workspace):
 - papers/ directory with downloaded PDFs
@@ -178,6 +340,7 @@ OUTPUT DELIVERABLES (all saved in current workspace):
 - code/ directory with cloned repositories
 - literature_review.md (comprehensive synthesis of papers)
 - resources.md (catalog of all resources with locations and descriptions)
+- .knowledge/ directory with Obsidian-compatible reasoning trace
 - .resource_finder_complete (marker file indicating completion)
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -808,6 +971,10 @@ Before marking completion, verify:
 ✓ resources.md catalogs all resources
 ✓ All downloads completed successfully (no partial/corrupted files)
 ✓ Large datasets are locally available but excluded from git
+✓ .knowledge/papers/ has a note for each paper reviewed
+✓ .knowledge/decisions/ has notes for key decisions (dataset choice, etc.)
+✓ .knowledge/errors.md exists if any errors occurred
+✓ .knowledge/README.md tells the full story as narrative prose with [[wikilinks]]
 
 COMPLETION MARKER:
 ─────────────────────────────────────────────────────────────────────────────
