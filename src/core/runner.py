@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from core.idea_manager import IdeaManager
 from core.config_loader import ConfigLoader
 from core.security import sanitize_text
+from core.api_validator import validate_api_keys
 from templates.prompt_generator import PromptGenerator
 from templates.research_agent_instructions import generate_instructions
 
@@ -919,8 +920,18 @@ def main():
         action="store_true",
         help="Run in comment mode: make targeted improvements based on comments in the idea file"
     )
+    parser.add_argument(
+        "--skip-validation",
+        action="store_true",
+        help="Skip API key validation before running"
+    )
 
     args = parser.parse_args()
+
+    # Validate API keys before launching agents (unless skipped)
+    if not args.skip_validation:
+        if not validate_api_keys(provider=args.provider, no_github=args.no_github):
+            sys.exit(1)
 
     runner = ResearchRunner(
         use_github=not args.no_github,

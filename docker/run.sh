@@ -449,6 +449,34 @@ cmd_run() {
 }
 
 # -----------------------------------------------------------------------------
+# Validate API keys (runs Python validator inside container)
+# -----------------------------------------------------------------------------
+cmd_validate() {
+    ensure_directories
+    check_env_file
+
+    local gpu_flags=$(get_gpu_flags)
+    local user_flags=$(get_user_flags)
+    local workspace_dir=$(get_workspace_dir)
+
+    local tty_flag=$(get_tty_flag)
+
+    echo -e "${BLUE}Validating API keys...${NC}"
+
+    # Skip entrypoint (no need for git, GPU, paper-finder for validation)
+    eval "docker run $tty_flag --rm \
+        $gpu_flags \
+        $user_flags \
+        --entrypoint python \
+        --env-file \"$PROJECT_ROOT/.env\" \
+        -v \"$PROJECT_ROOT/ideas:/app/ideas\" \
+        -v \"$PROJECT_ROOT/config:/app/config:ro\" \
+        -w /app \
+        \"$IMAGE_NAME\" \
+        /app/src/core/api_validator.py $@"
+}
+
+# -----------------------------------------------------------------------------
 # Docker Compose operations
 # -----------------------------------------------------------------------------
 cmd_up() {
@@ -1164,6 +1192,7 @@ cmd_help() {
     echo "  fetch <url> [--submit]    Fetch idea from IdeaHub"
     echo "  submit <idea.yaml>        Submit a research idea"
     echo "  run <id> [options]        Run research exploration"
+    echo "  validate [provider]       Validate API keys (provider: claude|codex|gemini)"
     echo "  up                        Start container in background (compose)"
     echo "  down                      Stop background container (compose)"
     echo "  logs                      View container logs (compose)"
@@ -1217,6 +1246,9 @@ case "$ACTION" in
         ;;
     run)
         cmd_run "$@"
+        ;;
+    validate)
+        cmd_validate "$@"
         ;;
     up)
         cmd_up

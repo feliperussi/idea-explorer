@@ -36,27 +36,52 @@ echo ""
 validate_env() {
     echo -e "${BLUE}Checking environment...${NC}"
 
-    # Check API keys (optional - CLIs use OAuth, but keys needed for some features)
-    # OPENAI_API_KEY: Required for IdeaHub integration and paper-finder
-    # GITHUB_TOKEN: Required for GitHub repo creation
-    # Note: Claude/Codex/Gemini CLIs use OAuth credentials from ~/.claude, ~/.codex, ~/.gemini
+    # Check API keys: presence + format validation (prefix checks).
+    # No HTTP calls here — keep container startup fast.
+    # Full HTTP validation available via: python -m core.api_validator
 
-    if [ -n "$OPENAI_API_KEY" ]; then
-        echo -e "  ${GREEN}[OK]${NC} OPENAI_API_KEY configured (IdeaHub, paper-finder)"
-    else
-        echo -e "  ${YELLOW}[INFO]${NC} OPENAI_API_KEY not set (IdeaHub and paper-finder won't work)"
-    fi
+    # Helper: check_key "ENV_VAR" "label" "required|optional" "prefix_pattern"
+    check_key() {
+        local var_name="$1"
+        local label="$2"
+        local required="$3"
+        local prefix="$4"
+        local value="${!var_name}"
 
-    if [ -n "$GITHUB_TOKEN" ]; then
-        echo -e "  ${GREEN}[OK]${NC} GITHUB_TOKEN configured"
-    else
-        echo -e "  ${YELLOW}[INFO]${NC} GITHUB_TOKEN not set - use --no-github flag"
-    fi
+        if [ -z "$value" ]; then
+            if [ "$required" = "required" ]; then
+                echo -e "  ${RED}[MISS]${NC} $var_name not set ($label)"
+            else
+                echo -e "  ${YELLOW}[INFO]${NC} $var_name not set ($label)"
+            fi
+            return
+        fi
 
-    if [ -n "$S2_API_KEY" ]; then
-        echo -e "  ${GREEN}[OK]${NC} S2_API_KEY configured (paper-finder)"
-    fi
+        # Format check (if prefix pattern provided)
+        if [ -n "$prefix" ]; then
+            if [[ "$value" == $prefix* ]]; then
+                echo -e "  ${GREEN}[OK]${NC} $var_name configured ($label)"
+            else
+                # Special case: GITHUB_TOKEN accepts ghp_ or github_pat_
+                if [ "$var_name" = "GITHUB_TOKEN" ] && [[ "$value" == github_pat_* ]]; then
+                    echo -e "  ${GREEN}[OK]${NC} $var_name configured ($label)"
+                else
+                    echo -e "  ${YELLOW}[WARN]${NC} $var_name set but unexpected format (expected ${prefix}...) ($label)"
+                fi
+            fi
+        else
+            echo -e "  ${GREEN}[OK]${NC} $var_name configured ($label)"
+        fi
+    }
 
+    check_key "ANTHROPIC_API_KEY" "Claude API access"        "optional"  "sk-ant-"
+    check_key "OPENAI_API_KEY"    "IdeaHub, paper-finder"    "optional"  "sk-"
+    check_key "GITHUB_TOKEN"      "GitHub repo creation"     "optional"  "ghp_"
+    check_key "GOOGLE_API_KEY"    "Google/Gemini API access" "optional"  "AIza"
+    check_key "S2_API_KEY"        "paper-finder"             "optional"  ""
+    check_key "COHERE_API_KEY"    "paper-finder reranking"   "optional"  ""
+
+    unset -f check_key
     echo ""
 }
 
