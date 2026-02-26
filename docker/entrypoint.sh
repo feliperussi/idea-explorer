@@ -18,6 +18,18 @@ if [ ! -w "${HOME:-/}" ]; then
     export HOME=/tmp
 fi
 
+# Restore Claude Code config if missing (lost between container restarts)
+# Claude Code stores its config at $HOME/.claude.json (outside the .claude/ dir).
+# The .claude/ directory is mounted from the host, but .claude.json is a sibling
+# file that gets lost when the container is recreated (--rm). Claude Code backs it
+# up inside .claude/backups/ which persists, so we restore the latest backup.
+if [ ! -f "$HOME/.claude.json" ] && [ -d "$HOME/.claude/backups" ]; then
+    latest_backup=$(ls -t "$HOME/.claude/backups/.claude.json.backup."* 2>/dev/null | head -1)
+    if [ -n "$latest_backup" ]; then
+        cp "$latest_backup" "$HOME/.claude.json"
+    fi
+fi
+
 # Color output for better visibility
 RED='\033[0;31m'
 GREEN='\033[0;32m'
