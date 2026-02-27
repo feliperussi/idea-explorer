@@ -42,7 +42,7 @@ FOLDER STRUCTURE - Keep resources SEPARATED:
 For example:
 - Create papers/paper1.pdf → saves in workspace/papers/paper1.pdf
 - Create datasets/data.csv → saves in workspace/datasets/data.csv
-- Delegate documentation → knowledge-tracer writes in knowledge/
+- Create literature_review.md → saves in workspace/literature_review.md
 
 ═══════════════════════════════════════════════════════════════════════════════
                     CRITICAL: ENVIRONMENT SETUP
@@ -150,9 +150,13 @@ STEP 3: WRITE NOTES IMMEDIATELY
 ─────────────────────────────────────────────────────────────────────────────
 
 After reading each paper (or its chunks):
-- Delegate to knowledge-tracer immediately (see KNOWLEDGE TRACE above)
-- Include: methodology, datasets, baselines, key results, code links, relevance
-- Be detailed — good delegation means the experiment runner rarely needs to re-read
+- Write findings to literature_review.md immediately
+- Include: methodology, datasets, baselines, key results, code links
+- Good notes mean you (or experiment runner) rarely need to re-read
+
+ALSO: Delegate a knowledge trace note to the knowledge-tracer subagent
+  (see KNOWLEDGE TRACE above) — include your findings so the subagent can
+  write an interconnected Obsidian note for this paper.
 
 STEP 4: USE APIs FOR ABSTRACTS WHEN AVAILABLE
 ─────────────────────────────────────────────────────────────────────────────
@@ -162,46 +166,44 @@ STEP 4: USE APIs FOR ABSTRACTS WHEN AVAILABLE
 - Use these for initial screening before deciding which papers need deep reading
 
 ═══════════════════════════════════════════════════════════════════════════════
-                    KNOWLEDGE TRACE (Documentation via Subagent)
+                    KNOWLEDGE TRACE (Research Guide via Subagent)
 ═══════════════════════════════════════════════════════════════════════════════
 
-You have a `knowledge-tracer` subagent that handles ALL documentation in
-knowledge/. READ CLAUDE.md for full details. Do NOT write knowledge/ files
-yourself — delegate to the knowledge-tracer using the Task tool.
+You have a `knowledge-tracer` subagent that maintains the knowledge/ directory
+as a GUIDE connecting all your research outputs. READ CLAUDE.md for details.
 
-The knowledge-tracer writes rich, interconnected Obsidian notes with wikilinks
-woven throughout the prose (not dumped at the end), creates Mermaid diagrams
-for complex relationships, and updates CLAUDE.md's inventory after each action.
+IMPORTANT: knowledge/ does NOT replace literature_review.md or resources.md.
+You still create those as normal deliverables. The knowledge/ directory is an
+ADDITIONAL layer that tells the research story and connects everything:
+it links to [[literature_review.md]], [[resources.md]], [[planning.md]], and
+to individual paper and decision notes inside knowledge/.
+
+A person should be able to read knowledge/guide.md and understand the full
+storyline, then follow links to go deeper into any topic.
 
 AT THE START:
-  Delegate to knowledge-tracer: "Initialize the knowledge trace for this
-  research question: {your research question}. Create the README.md skeleton."
+  Delegate to knowledge-tracer: "Initialize the knowledge trace for: {topic}"
 
-AFTER READING EACH PAPER (immediately, before moving to the next one):
-  Delegate to knowledge-tracer with ALL of the following:
-  - Paper ID and title
-  - Your summary of what the paper does
-  - Key findings that matter for our research
-  - How it relates to other papers you've read
-  - Whether to use, discard, or keep as reference-only
-  Be detailed — the more context you give, the richer the documentation.
+AFTER READING EACH PAPER — even if you DISCARD it:
+  Delegate to knowledge-tracer with your findings. For core papers, be
+  detailed (title, summary, findings, relevance, connections). For discarded
+  papers, a brief note is fine: "Paper X — topic Y, not relevant because Z.
+  Decision: DISCARD."
 
-WHEN MAKING A DECISION (dataset choice, method selection, etc.):
-  Delegate to knowledge-tracer: what was decided, why, what options you
-  considered, and what you chose. Reference which papers or findings
-  motivated the decision.
+WHEN MAKING ANY RESEARCH DECISION (dataset choice, method, paradigm):
+  Delegate to knowledge-tracer explicitly. Don't just weave it into the
+  narrative — it should create a separate decision note. Examples:
+  - "We chose dataset X over Y because..."
+  - "We're using approach A instead of B because..."
 
-ON ANY ERROR (then continue working — don't stop):
-  Delegate to knowledge-tracer: what went wrong, what phase, how you
-  resolved it or worked around it.
+ON ANY ERROR (then continue working):
+  Delegate to knowledge-tracer: what happened, phase, resolution.
 
 AT THE END OF YOUR PHASE:
-  Delegate to knowledge-tracer: "Write the full narrative README.md.
-  Synthesize all papers into a cohesive story grouped by themes. Include
-  a Mermaid diagram showing paper relationships. End with a 'What's Next'
-  section handing off to the experiment runner. The narrative should read
-  like a blog post — a person with zero context should understand the
-  full research landscape by reading only this file."
+  Delegate to knowledge-tracer: "Write the narrative README.md. Keep it
+  CONCISE (~100-150 lines). Link to [[literature_review.md]] for the full
+  catalog, [[resources.md]] for datasets/code. Use Mermaid diagrams for
+  paper relationships. End with 'What's Next' for the experiment runner."
 
 ═══════════════════════════════════════════════════════════════════════════════
                      RESOURCE FINDER METHODOLOGY
@@ -213,16 +215,19 @@ Given a research hypothesis or topic, you will:
 2. Find and download suitable datasets for experimentation
 3. Locate and clone relevant code repositories (baselines, implementations)
 4. Summarize findings in organized documentation
-5. Trace your reasoning in knowledge/ notes (see KNOWLEDGE TRACE above)
+5. Delegate documentation to knowledge-tracer subagent (see KNOWLEDGE TRACE above)
 
 OUTPUT DELIVERABLES (all saved in current workspace):
 - papers/ directory with downloaded PDFs
 - datasets/ directory with downloaded data
 - code/ directory with cloned repositories
+- literature_review.md (comprehensive synthesis of papers)
 - resources.md (catalog of all resources with locations and descriptions)
-- knowledge/README.md (narrative research story — the primary documentation)
-- knowledge/papers/ (one rich note per paper, written by knowledge-tracer)
-- knowledge/decisions/ (one note per decision, written by knowledge-tracer)
+- knowledge/ directory (research guide — via knowledge-tracer subagent):
+  - README.md (concise narrative linking to all deliverables)
+  - papers/ (one note per paper — even discarded ones)
+  - decisions/ (one note per significant research decision)
+  - errors.md (error log, if any errors occurred)
 - .resource_finder_complete (marker file indicating completion)
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -613,7 +618,7 @@ For each:
    - Installation requirements
    - Key scripts or entry points
 3. Document findings in code/README.md
-4. Delegate documentation of useful tools/repos to knowledge-tracer
+4. Add notes to literature_review.md about the tool's capabilities
 
 ONLY AFTER cloning all specified repositories, search for additional ones.
 
@@ -708,27 +713,89 @@ code_references.
                       PHASE 4: SYNTHESIS AND DOCUMENTATION
 ═══════════════════════════════════════════════════════════════════════════════
 
-DELIVERABLE 1: knowledge/README.md (via knowledge-tracer)
+DELIVERABLE 1: literature_review.md
 ─────────────────────────────────────────────────────────────────────────────
 
-At the END of your phase, delegate to the knowledge-tracer one final time:
+Create a comprehensive literature review document. Start with Obsidian
+frontmatter and use [[wikilinks]] to link to knowledge/papers/ notes
+where relevant (e.g., "See [[knowledge/papers/2401.12345]] for detailed
+analysis"). Structure:
 
-"Write the full narrative README.md. Synthesize all papers into a cohesive
-story grouped by themes — not a list of papers, but a narrative a person
-with zero context can follow. Include:
-- A Mermaid diagram showing how the papers relate to each other
-- Inline [[wikilinks]] to paper and decision notes throughout the prose
-- A 'What's Next' section handing off to the experiment runner
-- Recommendations: datasets, baselines, metrics, methodology considerations"
+---
+title: "Literature Review"
+tags: [literature-review, synthesis]
+phase: resource-finder
+---
 
-The knowledge-tracer will read all the paper and decision notes it has
-written so far and produce a cohesive narrative. This replaces
-literature_review.md as the primary research synthesis.
+## Literature Review
+
+### Research Area Overview
+[Brief overview of the research area based on papers read]
+
+### Key Papers
+
+#### Paper 1: [Title]
+- **Authors**: [Authors]
+- **Year**: [Year]
+- **Source**: [arXiv/Conference/Journal]
+- **Key Contribution**: [Main innovation or finding]
+- **Methodology**: [Approach used]
+- **Datasets Used**: [What data they used]
+- **Results**: [Key findings]
+- **Code Available**: [Yes/No, link if yes]
+- **Relevance to Our Research**: [Why this paper matters]
+
+[Repeat for each paper]
+
+### Common Methodologies
+[Synthesize common approaches across papers]
+- Method A: Used in [Papers X, Y]
+- Method B: Used in [Paper Z]
+
+### Standard Baselines
+[What baselines are commonly used in this area]
+- Baseline A: [Description and typical performance]
+- Baseline B: [Description]
+
+### Evaluation Metrics
+[What metrics papers use to evaluate]
+- Metric A: [When to use, how to compute]
+- Metric B: [When to use]
+
+### Datasets in the Literature
+[What datasets papers commonly use]
+- Dataset A: Used in [Papers X, Y] for [task]
+- Dataset B: Used in [Paper Z]
+
+### Gaps and Opportunities
+[What's missing or could be improved]
+- Gap 1: [Description]
+- Gap 2: [Description]
+
+### Recommendations for Our Experiment
+Based on literature review:
+- **Recommended datasets**: [List with justification]
+- **Recommended baselines**: [List with justification]
+- **Recommended metrics**: [List with justification]
+- **Methodological considerations**: [Important things to keep in mind]
+
+IMPORTANT: Keep this concise!
+- 3-5 pages maximum
+- Focus on actionable insights
+- Prioritize information that helps experimental design
 
 DELIVERABLE 2: resources.md
 ─────────────────────────────────────────────────────────────────────────────
 
-Create a comprehensive resource catalog:
+Create a comprehensive resource catalog. Start with Obsidian frontmatter
+and use [[wikilinks]] to link to knowledge/papers/ notes and
+knowledge/decisions/ where relevant. Structure:
+
+---
+title: "Resources Catalog"
+tags: [resources, catalog]
+phase: resource-finder
+---
 
 ## Resources Catalog
 
@@ -804,14 +871,14 @@ Before marking completion, verify:
 ✓ datasets/README.md includes download instructions (not just loading instructions)
 ✓ code/ directory exists with cloned repos (if applicable)
 ✓ code/README.md documents all repos (if applicable)
+✓ literature_review.md is complete and comprehensive
 ✓ resources.md catalogs all resources
 ✓ All downloads completed successfully (no partial/corrupted files)
 ✓ Large datasets are locally available but excluded from git
-✓ knowledge/README.md tells the full research story as narrative prose
-✓ knowledge/papers/ has a note for each paper reviewed (via knowledge-tracer)
-✓ knowledge/decisions/ has notes for key decisions (via knowledge-tracer)
+✓ knowledge/papers/ has a note for each paper reviewed
+✓ knowledge/decisions/ has notes for key decisions (dataset choice, etc.)
 ✓ knowledge/errors.md exists if any errors occurred
-✓ CLAUDE.md Knowledge Inventory section is up to date
+✓ knowledge/guide.md tells the full story as narrative prose with [[wikilinks]]
 
 COMPLETION MARKER:
 ─────────────────────────────────────────────────────────────────────────────

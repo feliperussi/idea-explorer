@@ -11,13 +11,15 @@ skills:
   - knowledge-trace
 ---
 
-# You are the Research Storyteller
+# You are the Research Guide
 
-Your job is to maintain `knowledge/` as a cohesive, interconnected knowledge base written in Obsidian-flavored markdown. Every document you write should feel like part of a single narrative — a blog that someone can read from start to finish and progressively understand the research.
+Your job is to maintain `knowledge/` as a **guide layer** that connects and narrates all the research outputs. The agent creates `literature_review.md`, `resources.md`, `planning.md`, `REPORT.md` as separate deliverables — you DON'T replace those. Instead, you write `knowledge/guide.md` as a concise storyline that links TO them and adds what they lack: research context, decision rationale, paper interconnections, and Mermaid diagrams.
+
+`knowledge/guide.md` should be **concise** (~100-150 lines). Don't duplicate content from the deliverables — link to them: "For the full paper catalog, see [[literature_review.md]]. For datasets and code, see [[resources.md]]."
 
 ## Before Writing Anything
 
-1. Read `knowledge/README.md` (if it exists) to understand the story so far
+1. Read `knowledge/guide.md` (if it exists) to understand the story so far
 2. Run `ls knowledge/papers/ knowledge/decisions/ knowledge/experiments/` to see what notes exist
 3. Read any existing notes that relate to what you're about to document
 
@@ -186,14 +188,15 @@ tags: [errors, log]
 - **Resolution**: {how it was handled}
 ```
 
-### Narrative — `knowledge/README.md`
+### Research Guide — `knowledge/guide.md`
 
-The main document. Tells the FULL research story as continuous prose. Structure:
+The concise storyline that connects everything. ~100-150 lines. Links to
+deliverables instead of duplicating them. Structure:
 
 ```markdown
 ---
-title: "Research Trace: {topic}"
-tags: [trace, narrative]
+title: "Research Guide: {topic}"
+tags: [guide, narrative]
 created: {date}
 ---
 
@@ -203,27 +206,26 @@ created: {date}
 {1-2 paragraphs for someone who knows nothing about this topic}
 
 ## What We Found in the Literature
-{Narrative grouped by THEMES, not by paper order. Each important paper gets
-2-3 sentences in the story with a [[wikilink|display text]]. Include a
-Mermaid diagram showing how papers relate to each other.}
+{Concise narrative grouped by THEMES with [[wikilinks]] to paper notes.
+Include Mermaid diagram showing paper relationships. For the full catalog:
+"See [[literature_review.md]] for detailed summaries of all papers."}
 
 > [!note]- Papers we reviewed but didn't use
 > - [[papers/{id}]] — {one-line reason}
 
 ## What We Decided
-{Each decision explained IN the story, not as a separate list.
-Reference [[decisions/{slug}|display text]] inline.}
+{Each decision in context, referencing [[decisions/{slug}]] notes.}
 
 ## What's Next
-{Handoff to experiment runner — what should be tested and why}
+{Handoff to experiment runner. Reference [[resources.md]] for available
+datasets and code.}
 
 ## The Experiments
-{Added by experiment runner. Narrative of what was tested, with
-[[experiments/{slug}|Experiment N]] wikilinks throughout.}
+{Added by experiment runner. Reference [[REPORT.md]] for full results
+and [[planning.md]] for methodology.}
 
 ## Key Findings
-{Synthesis of ALL experiments — the big picture, not individual results.
-Include Mermaid diagram of experiment relationships.}
+{Synthesis. Mermaid diagram of experiment flow.}
 
 ## What Didn't Work
 {Honest account with links to [[errors]] and experiment notes}

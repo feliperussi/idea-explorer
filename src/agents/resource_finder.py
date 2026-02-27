@@ -233,7 +233,7 @@ def run_resource_finder(
     print("📦 Checking for expected outputs...")
 
     outputs = {
-        'knowledge_narrative': work_dir / "knowledge" / "README.md",
+        'literature_review': work_dir / "literature_review.md",
         'resources_catalog': work_dir / "resources.md",
         'papers_dir': work_dir / "papers",
         'datasets_dir': work_dir / "datasets",

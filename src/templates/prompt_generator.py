@@ -456,10 +456,7 @@ Location: {run_dir}
 
         report_path = work_dir / "REPORT.md"
         planning_path = work_dir / "planning.md"
-        # Check knowledge/README.md first (new system), fall back to literature_review.md
-        lit_review_path = work_dir / "knowledge" / "README.md"
-        if not lit_review_path.exists():
-            lit_review_path = work_dir / "literature_review.md"
+        lit_review_path = work_dir / "literature_review.md"
 
         if report_path.exists():
             report_content = report_path.read_text()

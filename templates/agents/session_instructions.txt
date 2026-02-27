@@ -133,16 +133,15 @@ CRITICAL: Resources Have Been Pre-Gathered
 IMPORTANT: A separate resource-finding agent has already gathered research
 resources for you. Your workspace contains:
 
-- knowledge/README.md: The research story so far (narrative with wikilinks and Mermaid diagrams)
-- knowledge/papers/: Rich notes for each paper reviewed
-- knowledge/decisions/: Key decisions documented with context
-- CLAUDE.md: Knowledge Inventory showing what exists (read this first)
+- literature_review.md: Comprehensive literature review and synthesis
 - resources.md: Catalog of all available datasets, papers, and code
 - papers/: Downloaded research papers (PDFs)
 - datasets/: Downloaded datasets ready to use (locally available, not in git)
 - code/: Cloned repositories with baseline implementations
+- knowledge/: Obsidian-compatible reasoning trace from the resource finder
+  (README.md narrative, paper notes, decisions)
 
-READ knowledge/README.md for the full story of what was found and how
+READ knowledge/guide.md for the full story of what was found and how
 findings connect to each other.
 
 NOTE: The datasets/ directory contains a .gitignore that excludes large data files
@@ -214,37 +213,34 @@ If you find yourself about to create "simulated LLM agents," STOP and use real A
 
 ════════════════════════════════════════════════════════════════════════════════
 
-KNOWLEDGE TRACE (Documentation via Subagent)
+KNOWLEDGE TRACE (Research Guide via Subagent)
 ────────────────────────────────────────────────────────────────────────────────
 The resource finder has already created knowledge/ with paper notes, decisions,
 and a README.md that tells the story so far. You will CONTINUE this narrative
-by delegating documentation to the `knowledge-tracer` subagent.
+by delegating to the `knowledge-tracer` subagent. READ CLAUDE.md for details.
 
-READ CLAUDE.md for full details. The Knowledge Inventory section shows what
-documentation already exists.
+IMPORTANT: knowledge/ does NOT replace REPORT.md, planning.md, or any other
+deliverable. It is a GUIDE that connects everything. It links to
+[[literature_review.md]], [[resources.md]], [[planning.md]], [[REPORT.md]].
 
 AFTER EACH EXPERIMENT:
-  Delegate to knowledge-tracer: what you tested, your hypothesis, setup,
-  results, interpretation, and any issues. Reference which papers or decisions
-  motivated the experiment. If results contradict a paper's claims, tell the
-  knowledge-tracer so it can update that paper's note too.
+  Delegate to knowledge-tracer: what you tested, hypothesis, setup, results,
+  interpretation, issues. Reference which papers or decisions motivated it.
+  If results contradict a paper's claims, tell the knowledge-tracer so it
+  can update that paper's note too.
 
 WHEN PIVOTING APPROACH or making methodology decisions:
-  Delegate to knowledge-tracer: what was decided, context, options, choice,
-  and which experiments or papers informed the decision.
+  Delegate to knowledge-tracer explicitly — create a separate decision note.
 
-ON ANY ERROR (then continue working — don't stop):
-  Delegate to knowledge-tracer: what went wrong, what phase, impact, how
-  you resolved it.
+ON ANY ERROR (then continue working):
+  Delegate to knowledge-tracer: what happened, phase, resolution.
 
 AT THE END OF YOUR PHASE:
-  Delegate to knowledge-tracer: "Continue the narrative in README.md with
-  the experiment story. Include:
-  - The Experiments: narrative of what was tested and why, with Mermaid flow
-    diagram showing experiment sequence and dependencies
-  - Key Findings: synthesis of ALL experiments — the big picture
-  - What Didn't Work: honest account of errors and limitations
-  - Conclusion: was the hypothesis validated?"
+  Delegate to knowledge-tracer: "Continue the narrative in README.md.
+  Keep it CONCISE. Link to [[REPORT.md]] for detailed results, to
+  [[planning.md]] for methodology. Add Mermaid diagrams for experiment
+  flow. Sections: The Experiments, Key Findings, What Didn't Work,
+  Conclusion."
 
 ════════════════════════════════════════════════════════════════════════════════
 
@@ -258,10 +254,10 @@ EXECUTION WORKFLOW (FOLLOW THIS SEQUENCE - DO NOT STOP BETWEEN PHASES):
 ────────────────────────────────────────────────────────────────────────────────
 
 BEFORE YOU START: Review Pre-Gathered Resources (5-10 min)
-  ✓ READ CLAUDE.md for the Knowledge Inventory (what documentation exists)
-  ✓ READ knowledge/README.md for the full research story so far
-  ✓ Browse knowledge/papers/ for detailed paper analysis
-  ✓ READ resources.md to see what datasets, code, and papers are available
+  ✓ READ knowledge/guide.md for the research story so far
+  ✓ READ literature_review.md to understand the research landscape
+  ✓ READ resources.md to see what's available
+  ✓ Browse knowledge/papers/ for per-paper reasoning notes
   ✓ Check datasets/ directory to see what data is ready
   ✓ Explore code/ directory for baseline implementations
 
@@ -270,9 +266,9 @@ BEFORE YOU START: Review Pre-Gathered Resources (5-10 min)
 Phase 1: Motivation & Planning (20-40 min)
   ✓ FIRST: Write "Motivation & Novelty Assessment" section in planning.md
     - Why this research matters (problem and impact)
-    - What gap it fills (based on knowledge/README.md)
+    - What gap it fills (based on literature review)
     - Why each experiment is necessary
-  ✓ Review pre-gathered resources (knowledge/README.md, resources.md)
+  ✓ Review pre-gathered resources (literature_review.md, resources.md)
   ✓ Create experimental plan leveraging available datasets and code
   ✓ Design experiments with specific steps (justify each experiment)
   ✓ Choose baselines and metrics based on literature review
@@ -331,7 +327,7 @@ Phase 6: Final Documentation (20-30 min) - MANDATORY BEFORE ENDING SESSION
   ✓ Ensure resources.md documents your research process
   ✓ Verify all code has clear comments and docstrings
   ✓ Check reproducibility
-  ✓ APPEND experiment narrative to knowledge/README.md (continue the story)
+  ✓ APPEND experiment narrative to knowledge/guide.md (continue the story)
 
   → WHEN COMPLETE: Session is finished
 
@@ -371,7 +367,7 @@ If you need to cd into a subdirectory, ALWAYS return immediately:
 ⚠️  All your work MUST stay within this workspace directory
 
 Remember:
-- READ knowledge/README.md and resources.md first (they're in your current directory)
+- READ literature_review.md and resources.md first (they're in your current directory)
 - Use pre-downloaded datasets from datasets/ directory (relative to current directory)
 - Leverage code from code/ directory (relative to current directory)
 {{ code_reminder }}
@@ -431,6 +427,6 @@ The session is COMPLETE when:
 ✓ Code is organized with comments
 ✓ Results are saved to results/ directory
 ✓ knowledge/experiments/ has notes for each experiment run
-✓ knowledge/README.md tells the complete story (literature + experiments + findings)
+✓ knowledge/guide.md tells the complete story (literature + experiments + findings)
 
 If you reach this point, your research session is finished.

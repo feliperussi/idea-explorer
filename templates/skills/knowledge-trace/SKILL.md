@@ -5,7 +5,7 @@ description: Write Obsidian-compatible knowledge notes that tell the story of yo
 
 # Knowledge Trace Skill
 
-Write Obsidian-compatible notes that tell the story of your research process. A human should be able to open `knowledge/README.md` in Obsidian and understand everything — the question, the literature, the experiments, the findings — by reading one continuous narrative with links to deeper details.
+Write Obsidian-compatible notes that tell the story of your research process. A human should be able to open `knowledge/guide.md` in Obsidian and understand everything — the question, the literature, the experiments, the findings — by reading one continuous narrative with links to deeper details.
 
 ## Core Principles
 
@@ -172,14 +172,14 @@ Structure:
 5. At the end → delegate full narrative README.md
 
 ### During Experiment Runner
-1. Read `knowledge/README.md` to understand the story so far
+1. Read `knowledge/guide.md` to understand the story so far
 2. After each experiment → delegate experiment note
 3. When pivoting approach → delegate decision note
 4. On errors → delegate error log entry
 5. At the end → delegate narrative continuation (experiments + findings + conclusion)
 
 ### During Paper Writer
-1. Read `knowledge/README.md` for the full research story
+1. Read `knowledge/guide.md` for the full research story
 2. Use the narrative to structure the paper
 3. Cross-reference paper notes for Related Work
 4. Cross-reference experiment notes for Results
