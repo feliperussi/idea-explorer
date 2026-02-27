@@ -283,7 +283,7 @@ class ResearchPipelineOrchestrator:
         print("🛑 Pipeline paused for human review.")
         print()
         print("Please review the gathered resources:")
-        print(f"   - Literature review: {self.work_dir / 'literature_review.md'}")
+        print(f"   - Knowledge narrative: {self.work_dir / 'knowledge' / 'README.md'}")
         print(f"   - Resources catalog: {self.work_dir / 'resources.md'}")
         print(f"   - Papers: {self.work_dir / 'papers'}")
         print(f"   - Datasets: {self.work_dir / 'datasets'}")

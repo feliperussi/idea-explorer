@@ -16,6 +16,7 @@ paper_examples/*
 config/workspace.yaml
 mechinterp_playground/
 .claude
+!templates/workspace-init/.claude
 
 # Python
 __pycache__/

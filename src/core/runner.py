@@ -703,6 +703,28 @@ https://github.com/ChicagoHAI/idea-explorer
                     shutil.copytree(skill_dir, dst_skill_dir)
             print(f"   Copied skills to .codex/skills/")
 
+        # Copy workspace CLAUDE.md (auto-loaded by Claude Code agents)
+        workspace_src = self.project_root / "templates" / "workspace-init"
+        claude_md_src = workspace_src / "CLAUDE.md"
+        if claude_md_src.exists():
+            shutil.copy2(claude_md_src, work_dir / "CLAUDE.md")
+            print(f"   Copied CLAUDE.md to workspace root")
+
+        # Copy custom agent definitions (.claude/agents/)
+        agents_src = workspace_src / ".claude" / "agents"
+        agents_dst = work_dir / ".claude" / "agents"
+        if agents_src.exists():
+            agents_dst.mkdir(parents=True, exist_ok=True)
+            for agent_file in agents_src.glob("*.md"):
+                shutil.copy2(agent_file, agents_dst / agent_file.name)
+            print(f"   Copied agent definitions to .claude/agents/")
+
+        # Create knowledge/ directory structure for documentation
+        knowledge_dir = work_dir / "knowledge"
+        for subdir in ["papers", "decisions", "experiments"]:
+            (knowledge_dir / subdir).mkdir(parents=True, exist_ok=True)
+        print(f"   Created knowledge/ directory structure")
+
         # Add/merge .gitignore for research workspace
         self._setup_workspace_gitignore(work_dir)
 
